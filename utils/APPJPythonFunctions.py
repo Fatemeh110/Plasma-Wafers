@@ -167,8 +167,8 @@ def getArduinoAddress(os="macos"):
 
 	elif os == "ubuntu":
 		# command to list devices connected to the computer that can be used as call-out devices
-		listDevicesCommand = 'ls /dev/ttyACM0'
-		print('Getting devices that under the path: /dev/ttyACM0 ...')
+		listDevicesCommand = 'ls /dev/ttyACM*'
+		print('Getting devices that under the path: /dev/ttyACM* ...')
 
 	else:
 		print('OS not currently supported! Manually input the device path.')

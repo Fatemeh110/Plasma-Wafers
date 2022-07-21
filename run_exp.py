@@ -36,7 +36,7 @@ import argparse
 import utils.APPJPythonFunctions as appj
 from utils.experiments import Experiment
 
-sample_num_default = 1 # sample number for treatment
+sample_num_default = 0 # sample number for treatment
 time_treat_default = 30.0 # time to run experiment in seconds
 P_treat_default = 2.0 # power setting for the treatment in Watts
 q_treat_default = 2.0 # flow setting for the treatment in SLM
@@ -69,7 +69,7 @@ print(f"The settings for this treatment are:\n"+
       f"Treatment Time (s):         {time_treat}\n"+
       f"Power (W):                  {P_treat}\n"+
       f"Flow Rate (SLM):            {q_treat}\n"+
-      f"Separation Distance (cm):   {dist_treat}\n")
+      f"Separation Distance (mm):   {dist_treat}\n")
 
 cfm = input("Confirm these are correct: [Y/n]\n")
 if cfm in ['Y', 'y']:
@@ -84,6 +84,7 @@ else:
 ## collect time stamp
 timeStamp = datetime.now().strftime('%Y_%m_%d_%H'+'h%M''m%S'+'s')
 print('Timestamp for save files: ', timeStamp)
+Nrep = 1
 
 # configure run options
 runOpts = appj.RunOpts()
@@ -102,17 +103,17 @@ ts = runOpts.tSampling
 
 ## Set startup values
 dutyCycleIn = 100
-powerIn = 2.0
-flowIn = 3.0
+powerIn = P_treat
+flowIn = q_treat
 
-Ts0_des = 37.0 # desired initial surface temperature
-coolDownDiff = 3 # degrees to substract from desired surface temperature for cooldown
-warmUpDiff = 1 # degrees to subtract from desired surface temperature for initialization of experiment
+# Ts0_des = 37.0 # desired initial surface temperature
+# coolDownDiff = 3 # degrees to substract from desired surface temperature for cooldown
+# warmUpDiff = 1 # degrees to subtract from desired surface temperature for initialization of experiment
 
 # set save location
 directory = os.getcwd()
 # os.makedirs(directory+"/ExperimentalData/"+timeStamp, exist_ok=True)
-saveDir = directory+"/ExperimentalData/"+timeStamp+"/"
+saveDir = directory+"/ExperimentalData/"+timeStamp+f"-Sample{sample_num}/"
 print('\nData will be saved in the following directory:')
 print(saveDir)
 
@@ -157,41 +158,6 @@ tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTim
 print('measurement devices ready!')
 s = time.time()
 
-# let APPJ run for a bit
-powerIn = 1.5
-flowIn = 1.5
-appj.sendInputsArduino(arduinoPI, powerIn, flowIn, dutyCycleIn, arduinoAddress)
-time.sleep(0.5)
-
-w8 = input("Wait 5 min? [y,n]\n")
-if w8 == 'y':
-    print("Waiting 5 minutes to ensure roughly steady plasma startup...\n")
-    time.sleep(60)
-    print("4 minutes left...")
-    time.sleep(60)
-    print("3 minutes left...")
-    time.sleep(60)
-    print("2 minutes left...")
-    time.sleep(60)
-    print("1 minute left...")
-    time.sleep(60)
-else:
-    time.sleep(5)
-
-# wait for cooldown
-appj.sendInputsArduino(arduinoPI, 0.0, 0.0, dutyCycleIn, arduinoAddress)
-arduinoPI.close()
-while appj.getSurfaceTemperature() > Ts0_des-coolDownDiff:
-    time.sleep(runOpts.tSampling)
-    print('cooling down ...')
-arduinoPI = serial.Serial(arduinoAddress, baudrate=38400, timeout=1)
-time.sleep(2)
-appj.sendInputsArduino(arduinoPI, powerIn, flowIn, dutyCycleIn, arduinoAddress)
-# wait for surface to reach desired starting temp
-while appj.getSurfaceTemperature() < Ts0_des-warmUpDiff:
-    time.sleep(runOpts.tSampling)
-    print('warming up ...')
-
 prevTime = (time.time()-s)*1e3
 # get initial measurements
 tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
@@ -199,7 +165,7 @@ if runOpts.collectData:
     thermalCamOut = tasks[0].result()
     Ts0 = thermalCamOut[0]
     specOut = tasks[1].result()
-    I0 = specOut[0]*I_NORMALIZATION
+    I0 = specOut[0]
     oscOut = tasks[2].result()
     arduinoOut = tasks[3].result()
     outString = "Measured Outputs: Temperature: %.2f, Intensity: %.2f" % (Ts0, I0)
@@ -210,7 +176,7 @@ else:
 
 s = time.time()
 
-arduinoPI.close()
+# arduinoPI.close()
 
 ################################################################################
 ## Begin Experiment:
@@ -218,17 +184,7 @@ arduinoPI.close()
 exp = Experiment(Nsim, saveDir)
 
 for i in range(Nrep):
-    # connect to Arduino
-    arduinoPI = serial.Serial(arduinoAddress, baudrate=38400, timeout=1)
     s = time.time()
-    print('Pausing for cooldown...')
-    time.sleep(2)
-    if Nrep>1:
-        Ts0_des = Ts0_vec[i]
-    while appj.getSurfaceTemperature() > Ts0_des-coolDownDiff:
-        time.sleep(runOpts.tSampling)
-    appj.sendInputsArduino(arduinoPI, powerIn, flowIn, dutyCycleIn, arduinoAddress)
-    devices['arduinoPI'] = arduinoPI
 
     # create input sequences
     pseq = P_treat*np.ones((Nsim,))
