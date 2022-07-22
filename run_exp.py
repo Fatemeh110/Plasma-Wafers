@@ -1,4 +1,5 @@
-# this file runs the experiments for the APPJ testbed in the following paper:
+# this file runs the open loop data collection experiments for the APPJ testbed
+# in the following paper:
 #
 #
 # Requirements:
@@ -106,10 +107,6 @@ dutyCycleIn = 100
 powerIn = P_treat
 flowIn = q_treat
 
-# Ts0_des = 37.0 # desired initial surface temperature
-# coolDownDiff = 3 # degrees to substract from desired surface temperature for cooldown
-# warmUpDiff = 1 # degrees to subtract from desired surface temperature for initialization of experiment
-
 # set save location
 directory = os.getcwd()
 # os.makedirs(directory+"/ExperimentalData/"+timeStamp, exist_ok=True)
@@ -175,8 +172,6 @@ else:
     I0 = 100
 
 s = time.time()
-
-# arduinoPI.close()
 
 ################################################################################
 ## Begin Experiment:
