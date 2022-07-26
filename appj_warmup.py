@@ -54,7 +54,7 @@ if __name__=="__main__":
 
     ## Set startup values
     dutyCycleIn = 100
-    powerIn = 2.0
+    powerIn = 4.0
     flowIn = 3.0
 
     ## connect to/open connection to devices in setup
