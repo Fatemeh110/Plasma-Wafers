@@ -41,3 +41,27 @@ through `2022_07_26_13h24m24s-Sample96` for Sample 96.
 `2022_07_26_13h28m01s-Sample599` contains data for a test run which reduced the
 plasma jet distance to 3 mm (see Excel sheet for more info on the parameters for
    this run).
+
+## July 27, 2022
+Additional collection of open loop data for the treatment of TEOS wafers. 48
+samples were treated, with 45 containing valid data. Treatment parameters for
+the data collection are listed in the same Excel sheet linked under July 21,
+2022.
+
+In addition to the valid data collected, several folders with the designation
+`Sample999` contain baseline data for when the plasma jet is off.
+  * `2022_07_27_16h42m41s-Sample999` - baseline for a sample underneath jet
+
+Valid data collected starts with `2022_07_27_16h43m12s-Sample97` for Sample 97
+through `2022_07_27_17h28m13s-Sample140` for Sample 140.
+
+`2022_07_27_17h06m01s-Samplexx122` and `2022_07_27_17h07m43s-Samplexx122`
+contain data for repeated runs of Sample 122. The first sample, the data
+collection bugged out (no data folder). In the second sample (first data folder),
+the plasma acted strangely, producing an orange plasma(?) plume of gas. The
+second data folder contains a test run to make sure the plasma doesn't produce
+the orange plume again. `2022_07_27_17h08m57s-Sample122` corresponds to valid
+data for Sample 122.
+
+`2022_07_27_17h29m32s-Sample888` was an attempted run to see if the orange plume
+conditions would work again (for recording purposes). (no orange plume observed)
