@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 # from applescript import tell
-import pyvisa as visa
+# import pyvisa as visa
 import usbtmc
 from utils.uvcRadiometry import*
 # new imports since 2021/03/17:
@@ -16,7 +16,6 @@ import serial
 from seabreeze.spectrometers import Spectrometer, list_devices
 
 # Define constants
-NORMALIZATION = 25000
 
 ##################################################################################################################
 # PARAMETERS
@@ -377,6 +376,10 @@ class Oscilloscope():
 				instr = usbtmc.Instrument(0x1ab1, 0x04ce)
 				instr.open()
 				oscilloscopeStr = instr.ask("*IDN?\n")
+				# rm = visa.ResourceManager()
+				# devices = rm.list_resources()
+				# instr = rm.open_resource(devices[1])
+				# oscilloscopeStr = instr.query("*IDN?\n")
 			except Exception as e:
 				nAttempts += 1
 				print("{} in oscilloscope check loop".format(e))

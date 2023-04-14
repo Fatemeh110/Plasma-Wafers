@@ -72,7 +72,7 @@ if __name__=="__main__":
     spec = Spectrometer(devices[0])
     spec.integration_time_micros(12000*6)
     # Thermal Camera
-    dev, ctx = appj.openThermalCamera()
+    # dev, ctx = appj.openThermalCamera()
     print("Devices opened/connected to sucessfully!")
 
     devices = {}
@@ -87,17 +87,17 @@ if __name__=="__main__":
     time.sleep(2)
     input("Ensure plasma has ignited and press Return to begin.\n")
 
-    ## Startup asynchronous measurement
-    if os.name == 'nt':
-        ioloop = asyncio.ProactorEventLoop() # for subprocess' pipes on Windows
-        asyncio.set_event_loop(ioloop)
-    else:
-        ioloop = asyncio.get_event_loop()
-    # run once to initialize measurements
-    prevTime = (time.time()-s)*1e3
-    tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
-    print('measurement devices ready!')
-    s = time.time()
+    # ## Startup asynchronous measurement
+    # if os.name == 'nt':
+    #     ioloop = asyncio.ProactorEventLoop() # for subprocess' pipes on Windows
+    #     asyncio.set_event_loop(ioloop)
+    # else:
+    #     ioloop = asyncio.get_event_loop()
+    # # run once to initialize measurements
+    # prevTime = (time.time()-s)*1e3
+    # tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+    # print('measurement devices ready!')
+    # s = time.time()
 
     # let APPJ run for a bit
     time.sleep(2)
@@ -114,4 +114,4 @@ if __name__=="__main__":
     print("15 minutes have passed!")
 
     sendInputsArduino(arduinoPI, 0.0, 0.0, dutyCycleIn, arduinoAddress)
-    close_instr(instr, dev, ctx, spec)
+    # close_instr(instr, dev, ctx, spec)

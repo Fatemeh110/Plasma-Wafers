@@ -122,7 +122,7 @@ arduinoPI = serial.Serial(arduinoAddress, baudrate=38400, timeout=1)
 s = time.time()
 # Oscilloscope
 oscilloscope = appj.Oscilloscope()       # Instantiate object from class
-instr = oscilloscope.initialize()	# Initialize oscilloscope
+instr = oscilloscope.initialize(retry=1)	# Initialize oscilloscope
 # Spectrometer
 devices = list_devices()
 print(devices)
