@@ -37,11 +37,11 @@ import argparse
 import utils.APPJPythonFunctions as appj
 from utils.experiments import Experiment
 
-sample_num_default = 0 # sample number for treatment
-time_treat_default = 30.0 # time to run experiment in seconds
-P_treat_default = 2.0 # power setting for the treatment in Watts
-q_treat_default = 2.0 # flow setting for the treatment in SLM
-dist_treat_default = 5.0 # jet-to-substrate distance in cm
+sample_num_default = 0      # sample number for treatment
+time_treat_default = 30.0   # time to run experiment in seconds
+P_treat_default = 2.0       # power setting for the treatment in Watts
+q_treat_default = 2.0       # flow setting for the treatment in standard liters per minute (SLM)
+dist_treat_default = 5.0    # jet-to-substrate distance in mm
 
 ################################################################################
 ## Set up argument parser
@@ -65,12 +65,13 @@ P_treat = args.P_treat
 q_treat = args.q_treat
 dist_treat = args.dist_treat
 
-print(f"The settings for this treatment are:\n"+
-      f"Sample Number:              {sample_num}\n"+
-      f"Treatment Time (s):         {time_treat}\n"+
-      f"Power (W):                  {P_treat}\n"+
-      f"Flow Rate (SLM):            {q_treat}\n"+
-      f"Separation Distance (mm):   {dist_treat}\n")
+settings_str = f"The settings for this treatment are:\n"\
+      f"Sample Number:              {sample_num}\n"\
+      f"Treatment Time (s):         {time_treat}\n"\
+      f"Power (W):                  {P_treat}\n"\
+      f"Flow Rate (SLM):            {q_treat}\n"\
+      f"Separation Distance (mm):   {dist_treat}\n"
+print(settings_str)
 
 cfm = input("Confirm these are correct: [Y/n]\n")
 if cfm in ['Y', 'y']:
@@ -89,15 +90,17 @@ Nrep = 1
 
 # configure run options
 runOpts = appj.RunOpts()
-runOpts.collectData = True
-runOpts.collectEntireSpectra = True
-runOpts.collectOscMeas = False
-runOpts.collectSpatialTemp = False
+runOpts.collectData = True      # option to collect two-input, two-output data (power, flow rate); (max surface temperature, total intensity)
+runOpts.collectEntireSpectra = True # option to collect full intensity spectra
+runOpts.collectOscMeas = False # option to collect oscilloscope measurements (not functioning)
+runOpts.collectSpatialTemp = False # option to collect spatial temperature (defined as temperature from 12 pixels away from max in the four cardinal directions)
+# save options; correspond to the collection (two-input, two-output data is always saved)
 runOpts.saveSpectra = True
 runOpts.saveOscMeas = False
-runOpts.saveSpatialTemp = False
-runOpts.saveEntireImage = False
-runOpts.tSampling = 1.0
+runOpts.saveSpatialTemp = False # limited functionality
+runOpts.saveEntireImage = False # limited/no functionality
+
+runOpts.tSampling = 1.0 # set the sampling time of the measurements
 
 Nsim = int(time_treat/runOpts.tSampling)
 ts = runOpts.tSampling
@@ -109,8 +112,9 @@ flowIn = q_treat
 
 # set save location
 directory = os.getcwd()
-# os.makedirs(directory+"/ExperimentalData/"+timeStamp, exist_ok=True)
-saveDir = directory+"/ExperimentalData/"+timeStamp+f"-Sample{sample_num}/"
+split_cwd = directory.split('/')
+repo = split_cwd[-1]
+saveDir = directory+f"/../{repo}-ExperimentalData/"+timeStamp+f"-Sample{sample_num}/"
 print('\nData will be saved in the following directory:')
 print(saveDir)
 
@@ -177,6 +181,9 @@ s = time.time()
 ## Begin Experiment:
 ################################################################################
 exp = Experiment(Nsim, saveDir)
+
+f = open(saveDir+"notes.txt", 'a')
+f.write(settings_str)
 
 for i in range(Nrep):
     s = time.time()
