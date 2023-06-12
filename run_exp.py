@@ -43,7 +43,7 @@ sample_num_default = 0      # sample number for treatment
 time_treat_default = 30.0   # time to run experiment in seconds
 P_treat_default = 2.0       # power setting for the treatment in Watts
 q_treat_default = 2.0       # flow setting for the treatment in standard liters per minute (SLM)
-dist_treat_default = 5.0    # jet-to-substrate distance in mm
+dist_treat_default = 4.0    # jet-to-substrate distance in mm
 int_time_default = 12000*6  # integration time for spectrometer measurement in microseconds
 ts_default = 1.0            # sampling time to take measurements in seconds
 # NOTE: sampling time should be greater than integration time by roughly double

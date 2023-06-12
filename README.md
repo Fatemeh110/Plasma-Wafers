@@ -44,7 +44,7 @@ This code was used for the open-loop collection of data from the atmospheric pre
     
     2. Specify the values by changing Lines 42-48 in the `run_exp.py` script.
     
-If the settings are not modified using the above, then the default values for each setting are used (see Lines 42-48).
+If the settings are not modified using the above, then the default values for each setting are used (see Lines 42-48). It is not necessary to set each of the settings if they do not differ from the default values, i.e., `python3 run_exp.py -n 0 -t 30 -q 3.0` is equivalent to `python3 run_exp.py -n 0 -t 30 -q 3.0 -p 2.0 -d 4.0` since the default values of power and separation distance are 2 W and 4 mm, respectively.
     
 **[UPDATE 2023-06-11] Additional features to change the integration time of the spectrometer and the sampling time of the measurement collection have been added to the command-line interface. The flags to changes these settings are `-it` and `-ts` or `--int_time` and `--sampling_time` for integration time (in units of microseconds) and sampling time (in units of seconds), respectively.**
 
