@@ -29,7 +29,7 @@ This code was used for the open-loop collection of data from the atmospheric pre
 
 1. The gas and amplifier will need to be turned on according to the training and instructions provided in the laboratory manual.
 2. The plasma jet should be warmed up using `appj_warmup.py`.
-3. Experiments can be run using `run_exp.py`. For this repository, we modified treatment time, power, flow rate, and separation distance. These settings are specified to the script in order to set the appropriate values to the plasma jet. There are two ways to modify these settings:
+3. Experiments can be run using `run_exp.py`. For this repository, we modified treatment time, power, flow rate, and separation distance. These settings may be specified to the script in order to set the appropriate values to the plasma jet. There are two ways to modify these settings:
 
     1. [Recommended] specify the values as command-line arguments to the call to the Python script, e.g.:
     ```
@@ -41,4 +41,19 @@ This code was used for the open-loop collection of data from the atmospheric pre
     ```
     for a treatment time of 30 seconds, power of 2 Watts, flow rate of 3 SLM, treatment distance of 3 mm. The additional argument `-n` or `--sample_num` describes the sample number of the collected data. This can be used to keep track of the experiments.
     *Note: Treatment distance must be adjusted manually; the amplifier should be turned off when doing so.*
-    2. specify the values by changing Lines 40-44 in the `run_exp.py` script.
+    
+    2. Specify the values by changing Lines 42-48 in the `run_exp.py` script.
+    
+If the settings are not modified using the above, then the default values for each setting are used (see Lines 42-48).
+    
+**[UPDATE 2023-06-11] Additional features to change the integration time of the spectrometer and the sampling time of the measurement collection have been added to the command-line interface. The flags to changes these settings are `-it` and `-ts` or `--int_time` and `--sampling_time` for integration time (in units of microseconds) and sampling time (in units of seconds), respectively.**
+
+i.e., the command with all options is:
+```
+python3 run_exp.py -n 0 -t 30 -p 2.0 -q 3.0 -d 4.0 -it 50000 -ts 1
+```
+OR
+```
+python3 run_exp.py --sample_num 0 --time_treat 30 --P_treat 2.0 --q_treat 3.0 --dist_treat 4.0 --int_time 50000 --sampling_time 1
+```
+

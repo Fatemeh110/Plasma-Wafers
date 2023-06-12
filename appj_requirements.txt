@@ -6,7 +6,6 @@ seabreeze
 libusb1
 pyserial
 opencv-python
-opencv-python-headless
 pyvisa
 python-usbtmc
 pyusb

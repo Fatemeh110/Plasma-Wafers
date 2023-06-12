@@ -37,11 +37,16 @@ import argparse
 import utils.APPJPythonFunctions as appj
 from utils.experiments import Experiment
 
+plot_data = True # [True/False] whether or not to plot the (2-input, 2-output) data after an experiment
+
 sample_num_default = 0      # sample number for treatment
 time_treat_default = 30.0   # time to run experiment in seconds
 P_treat_default = 2.0       # power setting for the treatment in Watts
 q_treat_default = 2.0       # flow setting for the treatment in standard liters per minute (SLM)
 dist_treat_default = 5.0    # jet-to-substrate distance in mm
+int_time_default = 12000*6  # integration time for spectrometer measurement in microseconds
+ts_default = 1.0            # sampling time to take measurements in seconds
+# NOTE: sampling time should be greater than integration time by roughly double
 
 ################################################################################
 ## Set up argument parser
@@ -56,7 +61,11 @@ parser.add_argument('-p', '--P_treat', type=float, default=P_treat_default,
 parser.add_argument('-q', '--q_treat', type=float, default=q_treat_default,
                     help='The flow rate setting for the treatment in SLM.')
 parser.add_argument('-d', '--dist_treat', type=float, default=dist_treat_default,
-                    help='The jet-to-substrate distance in centimeters.')
+                    help='The jet-to-substrate distance in millimeters.')
+parser.add_argument('-it', '--int_time_treat', type=float, default=int_time_default,
+                    help='The integration time for the spectrometer in microseconds.')
+parser.add_argument('-ts', '--sampling_time', type=float, default=ts_default,
+                    help='The sampling time to take measurements in seconds.')
 
 args = parser.parse_args()
 sample_num = args.sample_num
@@ -64,14 +73,22 @@ time_treat = args.time_treat
 P_treat = args.P_treat
 q_treat = args.q_treat
 dist_treat = args.dist_treat
+int_time_treat = args.int_time_treat
+ts = args.sampling_time
 
 settings_str = f"The settings for this treatment are:\n"\
       f"Sample Number:              {sample_num}\n"\
       f"Treatment Time (s):         {time_treat}\n"\
       f"Power (W):                  {P_treat}\n"\
       f"Flow Rate (SLM):            {q_treat}\n"\
-      f"Separation Distance (mm):   {dist_treat}\n"
+      f"Separation Distance (mm):   {dist_treat}\n"\
+      f"Integration Time (us):      {int_time_treat}\n"\
+      f"Sampling Time (s):          {ts}\n"
 print(settings_str)
+
+if ts < 2*int_time_treat*1e-6:
+    print("Integration time too large! Please modify the integration time and/or the sampling time such that the sampling time is greater than double the integration time.")
+    exit(1)
 
 cfm = input("Confirm these are correct: [Y/n]\n")
 if cfm in ['Y', 'y']:
@@ -100,10 +117,9 @@ runOpts.saveOscMeas = False
 runOpts.saveSpatialTemp = False # limited functionality
 runOpts.saveEntireImage = False # limited/no functionality
 
-runOpts.tSampling = 1.0 # set the sampling time of the measurements
+runOpts.tSampling = ts # set the sampling time of the measurements
 
 Nsim = int(time_treat/runOpts.tSampling)
-ts = runOpts.tSampling
 
 ## Set startup values
 dutyCycleIn = 100
@@ -121,17 +137,18 @@ print(saveDir)
 ## connect to/open connection to devices in setup
 # Arduino
 arduinoAddress = appj.getArduinoAddress(os="ubuntu")
-print("Arduino Address: ", arduinoAddress)
+print("Arduino Address: ", arduinoAddress) 
 arduinoPI = serial.Serial(arduinoAddress, baudrate=38400, timeout=1)
 s = time.time()
-# Oscilloscope
-oscilloscope = appj.Oscilloscope()       # Instantiate object from class
-instr = oscilloscope.initialize(retry=1)	# Initialize oscilloscope
+# # Oscilloscope
+# oscilloscope = appj.Oscilloscope()       # Instantiate object from class
+# instr = oscilloscope.initialize(retry=1)	# Initialize oscilloscope
+instr = None
 # Spectrometer
 devices = list_devices()
 print(devices)
 spec = Spectrometer(devices[0])
-spec.integration_time_micros(12000*6)
+spec.integration_time_micros(int_time_treat) ## change integration time (units of microseconds)
 # Thermal Camera
 dev, ctx = appj.openThermalCamera()
 print("Devices opened/connected to sucessfully!")
@@ -216,7 +233,23 @@ devices['arduinoPI'] = arduinoPI
 # turn off plasma jet (programmatically)
 appj.sendInputsArduino(arduinoPI, 0.0, 0.0, dutyCycleIn, arduinoAddress)
 arduinoPI.close()
-print("Experiments complete!\n"+
+
+if plot_data:
+    import matplotlib.pyplot as plt
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4,1, figsize=(8,8), dpi=150)
+    ax1.plot(exp_data['Tsave'])
+    ax1.set_ylabel('Maximum Surface\nTemperature ($^\circ$C)')
+    ax2.plot(exp_data['Isave'])
+    ax2.set_ylabel('Total Optical\nEmission Intensity\n(arb. units)')
+    ax3.plot(exp_data['Psave'])
+    ax3.set_ylabel('Power (W)')
+    ax4.plot(exp_data['qSave'])
+    ax4.set_ylabel('Carrier Gas\nFlow Rate (SLM)')
+    ax4.set_xlabel('Time Step')
+    plt.tight_layout()
+    plt.show()
+    
+print("Experiment complete!\n"+
     "################################################################################################################\n"+
     "IF FINISHED WITH EXPERIMENTS, PLEASE FOLLOW THE SHUT-OFF PROCEDURE FOR THE APPJ\n"+
     "################################################################################################################\n")

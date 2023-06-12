@@ -63,16 +63,17 @@ if __name__=="__main__":
     print("Arduino Address:", arduinoAddress)
     arduinoPI = serial.Serial(arduinoAddress, baudrate=38400, timeout=1)
     s = time.time()
-    # Oscilloscope
-    oscilloscope = appj.Oscilloscope()       # Instantiate object from class
-    instr = oscilloscope.initialize()	# Initialize oscilloscope
+    # # Oscilloscope
+    # oscilloscope = appj.Oscilloscope()       # Instantiate object from class
+    # instr = oscilloscope.initialize()	# Initialize oscilloscope
+    instr = None
     # Spectrometer
     devices = list_devices()
     print(devices)
     spec = Spectrometer(devices[0])
     spec.integration_time_micros(12000*6)
     # Thermal Camera
-    # dev, ctx = appj.openThermalCamera()
+    dev, ctx = appj.openThermalCamera()
     print("Devices opened/connected to sucessfully!")
 
     devices = {}
