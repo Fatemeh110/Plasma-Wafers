@@ -26,6 +26,11 @@ import serial
 import cv2
 from datetime import datetime
 import asyncio
+from datetime import datetime
+import pandas as pd
+from picosdk.ps2000a import ps2000a as ps
+import matplotlib.pyplot as plt
+
 # pickle import to save class data
 try:
     import cPickle as pickle
@@ -36,6 +41,10 @@ import argparse
 ## import user functions
 import utils.APPJPythonFunctions as appj
 from utils.experiments import Experiment
+from utils.oscilloscope import Oscilloscope 
+from utils. Asynchronous_measurment import* 
+
+TEST = False       #for testing the code without any devices connected
 
 plot_data = True # [True/False] whether or not to plot the (2-input, 2-output) data after an experiment
 
@@ -47,6 +56,92 @@ dist_treat_default = 4.0    # jet-to-substrate distance in mm
 int_time_default = 12000*6  # integration time for spectrometer measurement in microseconds
 ts_default = 1.0            # sampling time to take measurements in seconds
 # NOTE: sampling time should be greater than integration time by roughly double
+
+################################################################################
+# USER OPTIONS (you may change these)
+################################################################################
+# variables that WILL change the function of the data collection
+save_backup = True          # whether [True] or not [False] to save a compressed H5 backup file every 10 iterations
+async_collection = True     # whether [True] or not [False] to collect data asynchronously, if this is True, then collect_osc and collect_spec will be automatically set to True regardless of the settings in the following two lines
+collect_spec = True         # whether [True] or not [False] to collect data from the spectrometer
+collect_osc = True          # whether [True] or not [False] to collect data from the oscilloscope
+collect_tc = True           # whether [True] or not [False] to collect data from the Thermal Camera
+samplingTime = 0.5          # sampling time in seconds
+# n_iterations = input("Number of iterations?:") # number of sampling iterations
+n_iterations = 101
+
+
+# variables that will NOT change the function of the data collection (for note-taking purposes)
+DEFAULT_EMAIL = "kchan45@berkeley.edu"          # the default email address to send the data to
+set_v = 85.0             # voltage in Volts
+set_freq = 200.0        # frequency in hertz
+set_flow = 0.5          # flow rate in liters per minute
+set_gap = 5.0           # distance reactor to target in mm
+set_target = input("Target?:")
+addl_notes = "chicken I"
+
+plot_last_data = True       # whether [True] or not [False] to plot the data from the final iteration of the data collection
+
+## OPTIONAL Configurations for the spectrometer - in case the settings for the spectrometer need to be customized
+integration_time = 200000       # in microseconds
+
+## OPTIONAL Configurations for the oscilloscope - in case the settings for the oscilloscope need to be customized
+mode = 'block'  # use block mode to capture the data using a trigger; the other option is 'streaming'
+# for block mode, you may wish to change the following:
+pretrigger_size = 200      # size of the data buffer before the trigger, default is 2000, in units of samples
+posttrigger_size = 800     # size of the data buffer after the trigger, default is 8000, in units of samples
+# for streaming mode, you may wish to change the following:
+single_buffer_size = 500    # size of
+n_buffers = 10              # number of buffers to acquire, default is 10
+timebase = 2              # timebase for the measurement resolution, 127 corresponds to 1us, default is 8
+
+# see oscilloscope_test.py for more information on defining the channels
+channelA = {"name": "A",
+            "enable_status": 1,
+            "coupling_type": ps.PS2000A_COUPLING['PS2000A_DC'],
+            "range": ps.PS2000A_RANGE['PS2000A_10V'],
+            "analog_offset": 0.0,
+            }
+channelB = {"name": "B",
+            "enable_status": 1,
+            "coupling_type": ps.PS2000A_COUPLING['PS2000A_DC'],
+            "range": ps.PS2000A_RANGE['PS2000A_20V'],
+            "analog_offset": 0.0,
+            }
+channelC = {"name": "C",
+            "enable_status": 1,
+            "coupling_type": ps.PS2000A_COUPLING['PS2000A_DC'],
+            "range": ps.PS2000A_RANGE['PS2000A_20V'],
+            "analog_offset": 0.0,
+            }
+channelD = {"name": "D",
+            "enable_status": 0,
+            "coupling_type": ps.PS2000A_COUPLING['PS2000A_DC'],
+            "range": ps.PS2000A_RANGE['PS2000A_5V'],
+            "analog_offset": 0.0,
+            }
+# put all desired channels into a list (vector with square brackets) named 'channels'
+channels = [channelA, channelB, channelC]
+# see oscilloscope_test.py for more information on defining the buffers
+# a buffer must be defined for every channel that is defined above
+bufferA = {"name": "A",
+           "segment_index": 0,
+           "ratio_mode": ps.PS2000A_RATIO_MODE['PS2000A_RATIO_MODE_NONE'],
+           }
+bufferB = {"name": "B"}
+bufferC = {"name": "C"}
+bufferD = {"name": "D"}
+# put all buffers into a list (vector with square brackets) named 'buffers'
+buffers = [bufferA, bufferB, bufferC]
+
+# see /test/oscilloscope_test.py for more information on defining the trigger (TODO)
+# a trigger is defined to capture the specific pulse characteristics of the plasma
+trigger = {"enable_status": 1,
+           "source": ps.PS2000A_CHANNEL['PS2000A_CHANNEL_A'],
+           "threshold": 1024, # in ADC counts
+           "direction": ps.PS2000A_THRESHOLD_DIRECTION['PS2000A_RISING'],
+           "delay": 0, # in seconds
+           "auto_trigger": 200} # in milliseconds
 
 ################################################################################
 ## Set up argument parser
@@ -143,23 +238,104 @@ s = time.time()
 # # Oscilloscope
 # oscilloscope = appj.Oscilloscope()       # Instantiate object from class
 # instr = oscilloscope.initialize(retry=1)	# Initialize oscilloscope
-instr = None
+
+################################################################################
+# PREPARE NOTES AND SET UP FILES FOR DATA COLLECTION
+# Recommended: Do NOT edit beyond this section
+################################################################################
+if async_collection:
+    collect_osc = True
+    collect_spec = True
+    collect_tc = True
+
+## collect time stamp for data collection
+timeStamp = datetime.now().strftime('%Y_%m_%d_%H'+'h%M''m%S'+'s')
+print('Timestamp for save files: ', timeStamp)
+
+# set save location
+directory = os.getcwd()
+saveDir = directory+"/data/"+timeStamp+"_"+addl_notes+"_"+set_target+"/"
+if not os.path.exists(saveDir):
+	os.makedirs(saveDir, exist_ok=True)
+print('\nData will be saved in the following directory:')
+print(saveDir)
+
+# notes to write to files
+line1 = f"# Data Timestamp: {timeStamp}\n"
+line2 = f"# Input Parameters: Target = {set_target}; Voltage = {set_v} Volts; Frequency = {set_freq} Hertz; Gap = {set_gap} mm; Carrier gas flow rate = {set_flow}; liters/minute.\n"
+line3 = f"# {addl_notes}\n"
+lines = [line1, line2, line3]
+# create a TXT file to save just the notes. The name of the text file is notes.txt
+f = open(saveDir+"notes.txt", 'a')
+for line in lines:
+    f.write(line)
+
+# create a CSV file to save the spectrometer data. The name of the CSV file is [timestamp]_spectra_data.csv
+# notes are appended to the top of the file
+if collect_spec:
+    f1 = open(saveDir+timeStamp+"_spectra_data.csv", 'a')
+    for line in lines:
+        f1.write(line)
+
+# create a CSV file to save the oscilloscope data. The name of the CSV file is [timestamp]_osc_data.csv
+# notes are appended to the top of the file
+if collect_osc:
+    f2 = open(saveDir+timeStamp+"_osc_data.csv", 'a')
+    for line in lines:
+        f2.write(line)
+if collect_tc:
+    f3 = open(saveDir+timeStamp+"_osc_data.csv", 'a')
+    for line in lines:
+        f3.write(line)
+
+################################################################################
+# CONNECT TO DEVICES
+################################################################################
 # Spectrometer
-devices = list_devices()
-print(devices)
-spec = Spectrometer(devices[0])
-spec.integration_time_micros(int_time_treat) ## change integration time (units of microseconds)
-# Thermal Camera
-dev, ctx = appj.openThermalCamera()
-print("Devices opened/connected to sucessfully!")
+if collect_spec:
+    if not TEST:
+        # for testing this code, it is not required to connect to the device;
+        # if you wish to test the connection to the device, please use the spectrometer_test.py
+        # this code detects the first available spectrometer connected to the computer
+        # devices = list_devices()
+        # print(devices)
+        # spec = Spectrometer(devices[0])
+        spec = Spectrometer.from_first_available()
+        spec.integration_time_micros(integration_time)
+    else:
+        spec = None
+
+# Oscilloscope
+if collect_osc:
+    if not TEST:
+        # for testing this code, it is not required to connect to the device;
+        # if you wish to test the connection to the device, please use the oscilloscope_test.py
+        osc = Oscilloscope()
+        status = osc.open_device()
+        status = osc.initialize_device(channels, buffers, trigger=trigger, timebase=timebase)
+    else:
+        osc = None
+# Thermal Camera 
+if collect_tc:
+    if not TEST:
+        # for testing this code, it is not required to connect to the device;
+        # if you wish to test the connection to the device, please use the thermal_test.py
+        dev, ctx = appj.openThermalCamera()
+    print("Devices opened/connected to sucessfully!")
 
 devices = {}
 devices['arduinoPI'] = arduinoPI
 devices['arduinoAddress'] = arduinoAddress
-devices['instr'] = instr
+devices['osc'] = osc
 devices['spec'] = spec
 
 # send startup inputs
+time.sleep(2)
+appj.sendInputsArduino(arduinoPI, powerIn, flowIn, dutyCycleIn, arduinoAddress)
+input("Ensure plasma has ignited and press Return to begin.\n")
+
+
+## Startup asynchronous measurement
 time.sleep(2)
 appj.sendInputsArduino(arduinoPI, powerIn, flowIn, dutyCycleIn, arduinoAddress)
 input("Ensure plasma has ignited and press Return to begin.\n")
@@ -172,13 +348,13 @@ else:
     ioloop = asyncio.get_event_loop()
 # run once to initialize measurements
 prevTime = (time.time()-s)*1e3
-tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
 print('measurement devices ready!')
 s = time.time()
 
 prevTime = (time.time()-s)*1e3
 # get initial measurements
-tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
 if runOpts.collectData:
     thermalCamOut = tasks[0].result()
     Ts0 = thermalCamOut[0]
@@ -193,7 +369,6 @@ else:
     I0 = 100
 
 s = time.time()
-
 ################################################################################
 ## Begin Experiment:
 ################################################################################

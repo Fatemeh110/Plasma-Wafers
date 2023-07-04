@@ -16,15 +16,6 @@ import serial
 from seabreeze.spectrometers import Spectrometer, list_devices
 
 # Define constants
-
-##################################################################################################################
-# PARAMETERS
-##################################################################################################################
-class Parameters():
-	def __init__(self):
-		self.INORM = 25000
-		#[...]
-
 class RunOpts():
 	'''
 	Class for run options of an experiment. Users can specify data collection
@@ -48,7 +39,7 @@ class RunOpts():
 
 		self.tSampling = 1.0
 
-	def setSamplingTime(tSampling):
+	def setSamplingTime(tSampling, self):
 		if self.collectOscMeas == True:
 			if tSampling > 0.8:
 				print('WARNING: sampling time may be greater than measurement collection + input actuation time!!')
