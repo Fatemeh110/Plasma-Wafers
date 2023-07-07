@@ -146,15 +146,15 @@ class Experiment():
                 spec = None
                 print(f'WARNING: {key} not in devices dict! Code will error...')
             # Oscilloscope
-            key = 'instr'
+            key = 'osc'
             if key in devices:
-                instr = devices[key]
+                osc = devices[key]
             else:
-                instr = None
+                osc = None
                 print(f'WARNING: {key} not in devices dict! Code will error...')
 
         ## get data sizes
-        tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+        tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
         if runOpts.collectData:
             thermalCamOut = tasks[0].result()
             Ts0 = thermalCamOut[0]
@@ -228,7 +228,7 @@ class Experiment():
             print(iterString)
 
             ## Get measurements
-            tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+            tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
             # Temperature
             if runOpts.collectData:
                 thermalCamMeasure = tasks[0].result()
@@ -460,15 +460,15 @@ class Experiment():
                 spec = None
                 print(f'WARNING: {key} not in devices dict! Code will error...')
             # Oscilloscope
-            key = 'instr'
+            key = 'osc'
             if key in devices:
-                instr = devices[key]
+                osc = devices[key]
             else:
-                instr = None
+                osc = None
                 print(f'WARNING: {key} not in devices dict! Code will error...')
 
         # initial measurement to get data sizes
-        tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+        tasks, runTime = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
         thermalCamOut = tasks[0].result()
         Ts0 = thermalCamOut[0]
         specOut = tasks[1].result()
@@ -511,7 +511,7 @@ class Experiment():
             print(f'\nIteration {i} out of {Niter}')
 
             # asynchronous measurement
-            tasks, _ = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, instr, spec, runOpts))
+            tasks, _ = ioloop.run_until_complete(appj.async_measure(arduinoPI, prevTime, osc, spec, runOpts))
 
             # Temperature
             thermalCamMeasure = tasks[0].result()

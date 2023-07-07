@@ -42,7 +42,6 @@ import argparse
 import utils.APPJPythonFunctions as appj
 from utils.experiments import Experiment
 from utils.oscilloscope import Oscilloscope 
-from utils. Asynchronous_measurment import* 
 
 TEST = False       #for testing the code without any devices connected
 
@@ -248,46 +247,6 @@ if async_collection:
     collect_spec = True
     collect_tc = True
 
-## collect time stamp for data collection
-timeStamp = datetime.now().strftime('%Y_%m_%d_%H'+'h%M''m%S'+'s')
-print('Timestamp for save files: ', timeStamp)
-
-# set save location
-directory = os.getcwd()
-saveDir = directory+"/data/"+timeStamp+"_"+addl_notes+"_"+set_target+"/"
-if not os.path.exists(saveDir):
-	os.makedirs(saveDir, exist_ok=True)
-print('\nData will be saved in the following directory:')
-print(saveDir)
-
-# notes to write to files
-line1 = f"# Data Timestamp: {timeStamp}\n"
-line2 = f"# Input Parameters: Target = {set_target}; Voltage = {set_v} Volts; Frequency = {set_freq} Hertz; Gap = {set_gap} mm; Carrier gas flow rate = {set_flow}; liters/minute.\n"
-line3 = f"# {addl_notes}\n"
-lines = [line1, line2, line3]
-# create a TXT file to save just the notes. The name of the text file is notes.txt
-f = open(saveDir+"notes.txt", 'a')
-for line in lines:
-    f.write(line)
-
-# create a CSV file to save the spectrometer data. The name of the CSV file is [timestamp]_spectra_data.csv
-# notes are appended to the top of the file
-if collect_spec:
-    f1 = open(saveDir+timeStamp+"_spectra_data.csv", 'a')
-    for line in lines:
-        f1.write(line)
-
-# create a CSV file to save the oscilloscope data. The name of the CSV file is [timestamp]_osc_data.csv
-# notes are appended to the top of the file
-if collect_osc:
-    f2 = open(saveDir+timeStamp+"_osc_data.csv", 'a')
-    for line in lines:
-        f2.write(line)
-if collect_tc:
-    f3 = open(saveDir+timeStamp+"_osc_data.csv", 'a')
-    for line in lines:
-        f3.write(line)
-
 ################################################################################
 # CONNECT TO DEVICES
 ################################################################################
@@ -323,6 +282,8 @@ if collect_tc:
         dev, ctx = appj.openThermalCamera()
     print("Devices opened/connected to sucessfully!")
 
+devices = list_devices()
+print(devices)
 devices = {}
 devices['arduinoPI'] = arduinoPI
 devices['arduinoAddress'] = arduinoAddress
